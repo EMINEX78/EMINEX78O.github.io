@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Votaciones - Fondo Animado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0c192c;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            margin: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .image-card {
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            text-align: center;
+            width: 150px;
+            transition: transform 0.2s;
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .image-card p {
+            margin: 5px 0;
+            color: white;
+            font-weight: bold;
+        }
+
+        .image-card button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        .image-card button:disabled {
+            background-color: #bbb;
+            cursor: not-allowed;
+        }
+
+        .image-card:hover {
+            transform: scale(1.05);
+        }
+
+        #results {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        table {
+            margin: 0 auto;
+            border-collapse: collapse;
+            width: 80%;
+            max-width: 600px;
+            background-color: white;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .bubbles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: space-around;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bubbles span {
+            position: relative;
+            width: 30px;
+            height: 30px;
+            background-color: #ff2d75;
+            border-radius: 50%;
+            box-shadow: 0 0 0 10px #4fc3dc44,
+                        0 0 50px #ff2d75,
+                        0 0 100px #ff2d75;
+            animation: animate 15s linear infinite;
+            animation-duration: calc(125s / var(--i));
+        }
+
+        .bubbles span:nth-child(even) {
+            background-color: #4fc3dc;
+        }
+
+        @keyframes animate {
+            0% {
+                transform: translateY(100vh) scale(0);
+            }
+            100% {
+                transform: translateY(-10vh) scale(1);
+            }
+        }
+
+        .voted {
+            border-color: green;
+        }
+
+        .disabled {
+            filter: grayscale(100%);
+        }
+
+        .buttons-container {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .buttons-container button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="bubbles">
+        <span style="--i:11;"></span>
+        <span style="--i:12;"></span>
+        <span style="--i:24;"></span>
+        <span style="--i:10;"></span>
+        <span style="--i:14;"></span>
+        <span style="--i:23;"></span>
+        <span style="--i:18;"></span>
+        <span style="--i:16;"></span>
+        <span style="--i:19;"></span>
+        <span style="--i:20;"></span>
+        <span style="--i:22;"></span>
+        <span style="--i:25;"></span>
+        <span style="--i:18;"></span>
+        <span style="--i:21;"></span>
+        <span style="--i:15;"></span>
+        <span style="--i:13;"></span>
+    </div>
+
+    <h1 style="text-align: center; color: white;">Sistema de Votaciones</h1>
+    <p style="text-align: center; color: white;">
+        Elige un dibujo para votar. Solo puedes votar una vez. Puedes anular tu voto para votar por otro.
+    </p>
+
+    <div class="container" id="image-container"></div>
+
+    <div id="results">
+        <h2>Resultados de las Votaciones</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Imagen</th>
+                    <th>Votos</th>
+                </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+        </table>
+    </div>
+
+    <div class="buttons-container">
+        <button id="reset-vote">Reiniciar Voto</button>
+    </div>
+
+    <script>
+        const totalImages = 16;
+        const votes = JSON.parse(localStorage.getItem('votes')) || Array(totalImages).fill(0);
+        let userVote = localStorage.getItem('userVote');
+
+        const imageContainer = document.getElementById('image-container');
+        const resultsBody = document.getElementById('results-body');
+        const resetVoteButton = document.getElementById('reset-vote');
+
+        const images = [
+            'imagenes/imagen1.jpg', 'imagenes/imagen2.jpg', 'imagenes/imagen3.jpg',
+            'imagenes/imagen4.jpg', 'imagenes/imagen5.jpg', 'imagenes/imagen6.jpg',
+            'imagenes/imagen7.jpg', 'imagenes/imagen8.jpg', 'imagenes/imagen9.jpg',
+            'imagenes/imagen10.jpg', 'imagenes/imagen11.jpg', 'imagenes/imagen12.jpg',
+            'imagenes/imagen13.jpg', 'imagenes/imagen14.jpg', 'imagenes/imagen15.jpg',
+            'imagenes/imagen16.jpg'
+        ];
+
+        images.forEach((src, i) => {
+        const card = document.createElement('div');
+        card.className = 'image-card';
+
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = `Imagen ${i + 1}`;
+
+        const caption = document.createElement('p');
+        caption.textContent = `Dibujo ${i + 1}`;
+
+        const button = document.createElement('button');
+        button.textContent = 'Votar';
+        button.disabled = userVote !== null;
+        button.onclick = () => vote(i);
+
+        card.appendChild(img);
+        card.appendChild(caption);
+        card.appendChild(button);
+        imageContainer.appendChild(card);
+    });
+
+    function vote(index) {
+        if (userVote === null) {
+            votes[index]++;
+            userVote = index;
+            localStorage.setItem('votes', JSON.stringify(votes));
+            localStorage.setItem('userVote', index);
+            updateResults();
+            disableAllButtons();
+        }
+    }
+
+    function resetVote() {
+        if (userVote !== null) {
+            votes[userVote]--;
+            localStorage.removeItem('userVote');
+            localStorage.setItem('votes', JSON.stringify(votes));
+            location.reload(); // Refresca la página para actualizar todo
+        }
+    }
+
+    function updateResults() {
+        resultsBody.innerHTML = '';
+        votes.forEach((voteCount, i) => {
+            const row = document.createElement('tr');
+            const imageCell = document.createElement('td');
+            const votesCell = document.createElement('td');
+
+            imageCell.textContent = `Imagen ${i + 1}`;
+            votesCell.textContent = voteCount;
+
+            row.appendChild(imageCell);
+            row.appendChild(votesCell);
+            resultsBody.appendChild(row);
+        });
+    }
+
+    function disableAllButtons() {
+        document.querySelectorAll('.image-card button').forEach(button => {
+            button.disabled = true;
+        });
+    }
+
+    if (userVote !== null) disableAllButtons();
+    resetVoteButton.onclick = resetVote;
+    updateResults();
+</script>
